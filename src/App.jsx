@@ -16,6 +16,8 @@ const globalStyles = `
     overflow: hidden;
     margin: 0;
     padding: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 
   /* Glassmorphism */
@@ -144,46 +146,48 @@ const Background = () => (
 );
 
 const Capa = ({ message, mood = 'normal' }) => {
-  const [isMinimized, setIsMinimized] = useState(false);
-
-  // Auto-expand when a new message arrives
-  useEffect(() => {
-    setIsMinimized(false);
-  }, [message]);
+  // Keep Capa minimized by default so it never blocks the learning content.
+  // Students can click the bot to open/close the guidance bubble.
+  const [isMinimized, setIsMinimized] = useState(true);
 
   return (
-    <div 
-      className="fixed z-[100] flex items-end gap-4 max-w-[85vw] sm:max-w-sm fade-in transition-all duration-300"
-      style={{ bottom: '1.5rem', right: '1.5rem' }}
+    <div
+      className="fixed z-[100] flex flex-col items-end gap-2 max-w-[92vw] sm:max-w-sm"
+      style={{ bottom: window.innerWidth < 640 ? '0.8rem' : '1.25rem', right: window.innerWidth < 640 ? '0.8rem' : '1.25rem' }}
     >
       {message && !isMinimized && (
-        <div className="glass p-4 rounded-2xl rounded-br-none text-sm font-medium shadow-2xl relative border-blue-500/30 mb-2">
-          <button 
+        <div className="glass p-4 rounded-2xl text-sm font-medium shadow-2xl relative border-blue-500/30 w-[min(300px,calc(100vw-2rem))] fade-in">
+          <button
             onClick={(e) => { e.stopPropagation(); setIsMinimized(true); }}
-            className="absolute -top-3 -right-3 bg-slate-800 text-slate-300 hover:text-white rounded-full p-1 border border-slate-500 z-10 transition-colors shadow-lg"
-            title="Minimize AI Assistant"
+            className="absolute -top-2 -right-2 bg-slate-800 text-slate-300 hover:text-white rounded-full p-1.5 border border-slate-500 z-10 transition-colors shadow-lg"
+            title="Close Capa guidance"
+            aria-label="Close Capa guidance"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
           </button>
-          <p className="text-blue-100 leading-relaxed pr-2">{message}</p>
+          <p className="text-blue-100 leading-relaxed pr-1">{message}</p>
         </div>
       )}
-      <div 
-        className={`w-14 h-14 sm:w-16 sm:h-16 shrink-0 relative cursor-pointer group transition-transform ${isMinimized ? 'opacity-80 hover:opacity-100 hover:scale-110' : 'animate-float'}`}
+
+      <button
+        type="button"
+        className={`w-14 h-14 sm:w-16 sm:h-16 shrink-0 relative cursor-pointer group transition-transform ${isMinimized ? 'opacity-90 hover:opacity-100 hover:scale-110' : 'animate-float'}`}
         onClick={() => setIsMinimized(!isMinimized)}
-        title={isMinimized ? "Expand AI Assistant" : "Minimize AI Assistant"}
+        title={isMinimized ? "Open Capa guidance" : "Minimize Capa guidance"}
+        aria-label={isMinimized ? "Open Capa guidance" : "Minimize Capa guidance"}
       >
-        <div className="absolute inset-0 bg-blue-500 rounded-full blur-xl opacity-40 group-hover:opacity-70 transition-opacity"></div>
-        <div className="w-full h-full glass-card rounded-full flex items-center justify-center border-blue-400 relative overflow-hidden">
-          {/* Eyes */}
-          <div className="flex gap-2">
-            <div className={`w-2 h-3 bg-cyan-300 rounded-full ${mood === 'happy' ? 'animate-pulse' : ''}`}></div>
-            <div className={`w-2 h-3 bg-cyan-300 rounded-full ${mood === 'happy' ? 'animate-pulse' : ''}`}></div>
-          </div>
-          {/* Antenna */}
-          <div className="absolute top-1 w-1 h-2 bg-blue-400 rounded-t-full"></div>
-        </div>
-      </div>
+        <span className="absolute inset-0 bg-blue-500 rounded-full blur-xl opacity-40 group-hover:opacity-70 transition-opacity"></span>
+        <span className="w-full h-full glass-card rounded-full flex items-center justify-center border-blue-400 relative overflow-hidden">
+          <span className="flex gap-2">
+            <span className={`w-2 h-3 bg-cyan-300 rounded-full ${mood === 'happy' ? 'animate-pulse' : ''}`}></span>
+            <span className={`w-2 h-3 bg-cyan-300 rounded-full ${mood === 'happy' ? 'animate-pulse' : ''}`}></span>
+          </span>
+          <span className="absolute top-1 w-1 h-2 bg-blue-400 rounded-t-full"></span>
+        </span>
+      </button>
     </div>
   );
 };
@@ -191,20 +195,65 @@ const Capa = ({ message, mood = 'normal' }) => {
 // --- PAGES / STEPS ---
 
 const Step1Landing = ({ onNext }) => (
-  <div className="flex flex-col items-center justify-center h-full text-center p-8 fade-in relative">
-    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-600/20 blur-[100px] rounded-full"></div>
-    <div className="glass px-4 py-1 rounded-full text-cyan-400 text-sm font-bold tracking-widest uppercase mb-8 flex items-center gap-2">
-      <Zap size={16} /> Physics Engineering Mission
+  <div className="flex flex-col h-full p-8 fade-in max-w-6xl mx-auto overflow-y-auto">
+    <div className="text-center mb-8">
+      <div className="glass px-4 py-1 rounded-full text-cyan-400 text-sm font-bold tracking-widest uppercase mb-5 inline-flex items-center gap-2">
+        <Zap size={16} /> Physics Touchscreen
+      </div>
+      <h1 className="text-4xl sm:text-5xl md:text-6xl font-black mb-4 tracking-tight">
+        THE <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">TOUCHSCREEN</span> MYSTERY
+      </h1>
+      <p className="text-lg md:text-xl text-slate-300 max-w-2xl mx-auto font-light">
+        Explore the physics behind capacitive touchscreen technology through observation and investigation.
+      </p>
     </div>
-    <h1 className="text-6xl md:text-8xl font-black mb-6 tracking-tight">
-      THE <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">TOUCHSCREEN</span><br/>MYSTERY
-    </h1>
-    <p className="text-xl md:text-2xl text-slate-300 mb-12 max-w-2xl font-light">
-      Millions use it daily. Few understand it. <br/> Put on your engineer's hat and uncover the invisible forces at your fingertips.
-    </p>
-    <button onClick={onNext} className="glass-button px-10 py-5 rounded-full text-xl font-bold flex items-center gap-3 animate-pulse-glow">
-      START THE MISSION <ChevronRight size={24} />
-    </button>
+
+    <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto w-full">
+      <div className="glass-card p-7 rounded-3xl">
+        <div className="flex items-center gap-3 mb-5">
+          <BookOpen className="text-cyan-400" />
+          <h2 className="text-2xl font-bold">Learning Objectives</h2>
+        </div>
+        <p className="text-slate-300 mb-4">After completing this learning activity, you will be able to:</p>
+        <ol className="space-y-3 text-slate-300 list-decimal list-inside leading-relaxed">
+          <li>Explain the working principle of capacitive touch screens using the concept of parallel plate capacitors based on the results of phenomenon analysis and investigation in a scientific and correct manner.</li>
+          <li>Analyze the influence of plate area (A), distance between plates (d), and dielectric material (ε) on the capacitance of parallel plate capacitors based on the data from the Virtual Capacitor Lab simulation investigation correctly.</li>
+          <li>Analyze the mathematical relationship between the data from the investigation results correctly.</li>
+        </ol>
+      </div>
+
+      <div className="glass-card p-7 rounded-3xl">
+        <div className="flex items-center gap-3 mb-5">
+          <Play className="text-cyan-400" />
+          <h2 className="text-2xl font-bold">How to Use</h2>
+        </div>
+        <p className="text-slate-300 leading-relaxed mb-5">
+          Follow each phase in sequence and interact with the simulations to explore the physics behind capacitive touchscreens.
+        </p>
+        <div className="border border-dashed border-cyan-500/30 rounded-2xl p-6 text-center">
+          <Play size={32} className="mx-auto mb-3 text-cyan-400" />
+
+          <p className="font-semibold text-slate-200 mb-2">Physics Touchscreen Tutorial</p>
+          <p className="text-sm text-slate-500 mt-2">Watch the tutorial video to learn how to navigate and use each phase of this learning media.</p>
+
+          <a
+          href="https://youtu.be/_Tmt3FdO_sY"
+          target="_blank"
+          rel="nooper noreferrer"
+          classNama="inline-flex items-center gap-2 rounded-full bg cyan-500 px-6 py-3 fontbold text-white shadow-Lg transition hover:scale-1-5 hover-bg-cyan-400"
+          >
+            <Play size={18} fill="currentColor"/>
+            Watch Tutorial Video
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div className="flex justify-center mt-8">
+      <button onClick={onNext} className="glass-button px-10 py-4 rounded-full text-lg font-bold flex items-center gap-3 animate-pulse-glow">
+        START LEARNING <ChevronRight size={24} />
+      </button>
+    </div>
   </div>
 );
 
@@ -227,12 +276,24 @@ const Step2Observe = ({ onNext, setGlobalXp }) => {
       <h2 className="text-3xl font-bold mb-2 flex items-center gap-3 text-cyan-400">
         <Search className="text-blue-500" /> Observation Phase
       </h2>
-      <p className="text-slate-300 mb-8">Interact with the smartphone prototype using different objects.</p>
+      <p className="text-slate-300 mb-3">Interact with the smartphone prototype using different objects.</p>
+
+      <div className="glass-card p-4 rounded-2xl mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <p className="font-bold text-cyan-300">Observation Task</p>
+          <p className="text-sm text-slate-400">Test all three objects and observe how the touchscreen responds to each one.</p>
+        </div>
+        <div className={`px-4 py-2 rounded-full text-sm font-bold border shrink-0 ${allTested ? 'bg-green-500/15 border-green-400/40 text-green-300' : 'bg-slate-800 border-slate-700 text-slate-300'}`}>
+          {tested.length}/3 objects tested
+        </div>
+      </div>
 
       <div className="flex-1 grid md:grid-cols-2 gap-12 items-center">
         {/* Smartphone Simulator */}
         <div className="flex justify-center relative">
-          <div className="w-64 h-[500px] glass-card rounded-[3rem] border-8 border-slate-800 p-2 relative shadow-2xl flex flex-col justify-center items-center overflow-hidden">
+          <div className="w-48 sm:w-56 md:w-64 
+          
+          h-[380px] sm:h-[430px] md:h-[500px] glass-card rounded-[3rem] border-8 border-slate-800 p-2 relative shadow-2xl flex flex-col justify-center items-center overflow-hidden">
             <div className="absolute top-4 w-20 h-4 bg-slate-800 rounded-full"></div>
             
             <div className={`transition-all duration-500 transform ${activeItem ? 'scale-110 opacity-100' : 'scale-90 opacity-50'}`}>
@@ -299,232 +360,279 @@ const Step2Observe = ({ onNext, setGlobalXp }) => {
             </div>
           </div>
 
-          {allTested && (
+          {allTested ? (
             <div className="fade-in bg-blue-900/40 border border-blue-500/30 p-6 rounded-2xl">
-              <p className="text-xl font-medium mb-4">"What is the smartphone actually detecting if it ignores pressure from the plastic pen?"</p>
+              <div className="flex items-center gap-2 mb-2 text-green-300">
+                <CheckCircle2 size={20} />
+                <p className="font-bold">Observation Complete!</p>
+              </div>
+              <p className="text-slate-300 mb-4">You have tested all three objects. You may now continue to the investigation phase.</p>
               <button onClick={onNext} className="glass-button w-full py-3 rounded-xl font-bold flex justify-center items-center gap-2">
-                Formulate Hypothesis <ChevronRight size={20}/>
+                Continue to Investigation <ChevronRight size={20}/>
               </button>
+            </div>
+          ) : (
+            <div className="glass px-5 py-4 rounded-2xl border border-slate-700/70">
+              <p className="text-sm font-semibold text-slate-300">You must test all three objects before continuing to the next phase.</p>
             </div>
           )}
         </div>
       </div>
-      <Capa message={allTested ? "Interesting! Both the finger and metallic stylus work, but the plastic doesn't. Why? (Psst... You can drag me if I'm in the way!)" : "Try testing all three objects to see how the screen reacts."} mood={allTested ? 'happy' : 'normal'} />
+      <Capa message={allTested ? "Great! You have explored all three objects. Now let's investigate the physics behind the phenomenon." : "Try testing all three objects to see how the screen reacts."} mood={allTested ? 'happy' : 'normal'} />
     </div>
   );
 };
 
-const Step3Predict = ({ onNext, setGlobalXp }) => {
-  const [selected, setSelected] = useState(null);
+const Step3Prepare = ({ onNext }) => (
+  <div className="flex flex-col min-h-full py-8 px-4 sm:px-8 fade-in max-w-6xl mx-auto items-center justify-center overflow-y-auto">
+    <div className="text-center mb-8">
+      <div className="inline-flex items-center gap-2 text-cyan-400 mb-4">
+        <BrainCircuit size={28} />
+        <span className="font-bold uppercase tracking-widest">Investigation Preparation</span>
+      </div>
+      <h2 className="text-4xl font-bold mb-4">Formulate Your Hypotheses</h2>
+      <p className="text-slate-300 text-lg max-w-3xl mx-auto leading-relaxed">
+        Three factors will be investigated in the Virtual Capacitor Lab. Predict their effects in your Student Worksheet before testing them.
+      </p>
+    </div>
 
-  const options = [
-    { id: 'heat', title: 'Heat Signature', desc: 'The screen detects body temperature.', icon: '🔥' },
-    { id: 'pressure', title: 'Micro-Pressure', desc: 'It detects very slight physical pushes.', icon: '👇' },
-    { id: 'electric', title: 'Electrical Properties', desc: 'It detects conductive materials.', icon: '⚡' },
-    { id: 'moisture', title: 'Moisture', desc: 'It senses sweat or humidity from skin.', icon: '💧' }
-  ];
-
-  const handleSelect = (id) => {
-    if (!selected) setGlobalXp(prev => prev + 50); // XP awarded for making a choice
-    setSelected(id);
-  };
-
-  return (
-    <div className="flex flex-col h-full p-8 fade-in max-w-5xl mx-auto items-center justify-center">
-      <h2 className="text-4xl font-bold mb-4 text-center">What is your hypothesis?</h2>
-      <p className="text-slate-300 mb-12 text-center max-w-2xl text-lg">Based on the observation, select the most scientifically logical explanation for how the touchscreen detects a touch.</p>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full mb-12">
-        {options.map((opt) => (
-          <div 
-            key={opt.id}
-            onClick={() => handleSelect(opt.id)}
-            className={`glass-card p-6 rounded-2xl cursor-pointer transition-all duration-300 ${
-              selected === opt.id ? 'ring-4 ring-cyan-400 scale-105 bg-blue-900/50' : 'hover:scale-105 hover:bg-slate-800/50'
-            }`}
-          >
-            <div className="text-4xl mb-4">{opt.icon}</div>
-            <h3 className="text-xl font-bold mb-2">{opt.title}</h3>
-            <p className="text-slate-400">{opt.desc}</p>
+    <div className="grid md:grid-cols-3 gap-5 w-full max-w-5xl mb-7">
+      {/* Plate Area */}
+      <div className="glass-card p-5 rounded-3xl relative overflow-hidden group hover:-translate-y-1 transition-transform">
+        <div className="absolute -right-8 -top-8 w-28 h-28 rounded-full bg-cyan-400/10 blur-2xl"></div>
+        <div className="flex items-center justify-between mb-4">
+          <div className="w-11 h-11 rounded-2xl bg-cyan-400/10 border border-cyan-400/30 flex items-center justify-center">
+            <Layers className="text-cyan-300" size={24} />
           </div>
-        ))}
+          <span className="text-xs font-bold uppercase tracking-widest text-cyan-300">Factor 01</span>
+        </div>
+        <h3 className="text-xl font-bold mb-1">Plate Area</h3>
+        <p className="text-sm text-slate-400 mb-5">A</p>
+        <div className="h-24 rounded-2xl bg-slate-950/50 border border-white/10 flex items-center justify-center relative overflow-hidden">
+          <div className="w-28 h-8 rounded-md bg-cyan-400/70 border border-cyan-200/70 shadow-[0_0_20px_rgba(34,211,238,0.25)]"></div>
+          <div className="absolute left-8 right-8 bottom-3 border-t border-dashed border-cyan-300/60"></div>
+          <span className="absolute bottom-0.5 text-[10px] text-cyan-200">larger / smaller surface</span>
+        </div>
       </div>
 
-      {selected && (
-        <div className="fade-in">
-          <button onClick={onNext} className="glass-button px-8 py-4 rounded-full font-bold flex items-center gap-2 text-lg">
-            Test Hypothesis in the Lab <ChevronRight size={24}/>
-          </button>
+      {/* Plate Distance */}
+      <div className="glass-card p-5 rounded-3xl relative overflow-hidden group hover:-translate-y-1 transition-transform">
+        <div className="absolute -right-8 -top-8 w-28 h-28 rounded-full bg-blue-400/10 blur-2xl"></div>
+        <div className="flex items-center justify-between mb-4">
+          <div className="w-11 h-11 rounded-2xl bg-blue-400/10 border border-blue-400/30 flex items-center justify-center">
+            <ChevronUpDownIcon />
+          </div>
+          <span className="text-xs font-bold uppercase tracking-widest text-blue-300">Factor 02</span>
         </div>
-      )}
-      
-      <Capa 
-        message={selected ? "A good scientist always starts with a hypothesis! Now we need to design an experiment to test it. To the lab!" : "Take a guess! There are no wrong answers in a hypothesis, only opportunities to test your logic."} 
-        mood={selected ? 'happy' : 'normal'}
-      />
+        <h3 className="text-xl font-bold mb-1">Plate Distance</h3>
+        <p className="text-sm text-slate-400 mb-5">d</p>
+        <div className="h-24 rounded-2xl bg-slate-950/50 border border-white/10 flex items-center justify-center relative">
+          <div className="w-28 flex flex-col gap-8 items-center">
+            <div className="w-28 h-2 rounded-full bg-blue-400 border border-blue-200 shadow-[0_0_15px_rgba(59,130,246,0.3)]"></div>
+            <div className="w-28 h-2 rounded-full bg-slate-300 border border-white/70 shadow-[0_0_15px_rgba(148,163,184,0.2)]"></div>
+          </div>
+          <div className="absolute right-8 top-5 bottom-5 border-l border-dashed border-blue-300/70"></div>
+          <div className="absolute right-5 top-5 bottom-5 flex flex-col justify-between text-[10px] text-blue-200">
+            <span>↕</span><span>↕</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Dielectric Material */}
+      <div className="glass-card p-5 rounded-3xl relative overflow-hidden group hover:-translate-y-1 transition-transform">
+        <div className="absolute -right-8 -top-8 w-28 h-28 rounded-full bg-purple-400/10 blur-2xl"></div>
+        <div className="flex items-center justify-between mb-4">
+          <div className="w-11 h-11 rounded-2xl bg-purple-400/10 border border-purple-400/30 flex items-center justify-center">
+            <Sparkles className="text-purple-300" size={24} />
+          </div>
+          <span className="text-xs font-bold uppercase tracking-widest text-purple-300">Factor 03</span>
+        </div>
+        <h3 className="text-xl font-bold mb-1">Dielectric Material</h3>
+        <p className="text-sm text-slate-400 mb-5">ε</p>
+        <div className="h-24 rounded-2xl bg-slate-950/50 border border-white/10 flex items-center justify-center gap-2">
+          <div className="w-8 h-14 rounded-md bg-slate-300/80 border border-white/60"></div>
+          <div className="w-8 h-14 rounded-md bg-purple-400/60 border border-purple-200/60 shadow-[0_0_18px_rgba(192,132,252,0.25)]"></div>
+          <div className="w-8 h-14 rounded-md bg-blue-400/60 border border-blue-200/60"></div>
+        </div>
+      </div>
     </div>
-  );
-};
+
+    <div className="glass-card p-6 rounded-3xl w-full max-w-5xl mb-6 border-cyan-500/20">
+      <div className="flex items-start gap-4">
+        <div className="w-10 h-10 shrink-0 rounded-xl bg-cyan-400/10 border border-cyan-400/30 flex items-center justify-center">
+          <BookOpen className="text-cyan-300" size={21} />
+        </div>
+        <div>
+          <h3 className="text-lg font-bold mb-2">Your Task</h3>
+          <p className="text-slate-300 leading-relaxed">
+            Write your three hypotheses in the <span className="text-cyan-300 font-semibold">Student Worksheet</span>. Predict what will happen to capacitance when each factor is changed. Keep your predictions for comparison with the investigation results.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div className="glass px-6 py-4 rounded-2xl w-full max-w-5xl mb-6 border-cyan-500/30 text-center">
+      <p className="text-cyan-300 font-semibold">📝 Complete the three hypothesis statements in your Student Worksheet before starting the simulation.</p>
+    </div>
+
+    <button onClick={onNext} className="glass-button px-10 py-4 rounded-full text-lg font-bold flex items-center gap-3">
+      I HAVE WRITTEN MY HYPOTHESES <ChevronRight size={24}/>
+    </button>
+
+    <Capa message="Your hypotheses are predictions—not answers. Use the Virtual Capacitor Lab to test your ideas with evidence." />
+  </div>
+);
+
+const ChevronUpDownIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-300">
+    <path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/><path d="M12 4v16"/>
+  </svg>
+);
 
 const Step4Investigate = ({ onNext, setGlobalXp }) => {
-  const [area, setArea] = useState(50);
-  const [distance, setDistance] = useState(25);
-  const [dielectric, setDielectric] = useState(1); 
-  
-  const [explored, setExplored] = useState(new Set());
-  const [bonusAwarded, setBonusAwarded] = useState(false); 
+  const AREA_TARGETS = [25, 50, 75, 100];
+  const DISTANCE_TARGETS = [10, 20, 30, 40];
+  const MATERIAL_TARGETS = ['air', 'plastic', 'glass'];
 
-  const handleInteraction = (type) => {
-    setExplored(prev => new Set(prev).add(type));
+  const [area, setArea] = useState(0);
+  const [distance, setDistance] = useState(0);
+  const [dielectric, setDielectric] = useState(1);
+  const [materialName, setMaterialName] = useState('air');
+  const [testedArea, setTestedArea] = useState(new Set());
+  const [testedDistance, setTestedDistance] = useState(new Set());
+  const [testedMaterial, setTestedMaterial] = useState(new Set());
+  const [completed, setCompleted] = useState(false);
+
+  const markArea = (value) => {
+    setArea(value);
+    if (AREA_TARGETS.includes(value)) setTestedArea(prev => new Set(prev).add(value));
   };
 
-  const capacitance = ((dielectric * area) / distance).toFixed(2);
-  const hasExploredAll = explored.has('area') && explored.has('distance') && explored.has('material');
-  
+  const markDistance = (value) => {
+    setDistance(value);
+    if (DISTANCE_TARGETS.includes(value)) setTestedDistance(prev => new Set(prev).add(value));
+  };
+
+  const markMaterial = (name, value) => {
+    setMaterialName(name);
+    setDielectric(value);
+    setTestedMaterial(prev => new Set(prev).add(name));
+  };
+
+  const allExplored =
+    testedArea.size === AREA_TARGETS.length &&
+    testedDistance.size === DISTANCE_TARGETS.length &&
+    testedMaterial.size === MATERIAL_TARGETS.length;
+
   useEffect(() => {
-    if (area === 100 && distance === 5 && dielectric === 10 && !bonusAwarded) {
-      setBonusAwarded(true);
+    if (allExplored && !completed) {
+      setCompleted(true);
       setGlobalXp(prev => prev + 150);
     }
-  }, [area, distance, dielectric, bonusAwarded, setGlobalXp]);
+  }, [allExplored, completed, setGlobalXp]);
+
+  const capacitance = distance === 0 ? "—" : ((dielectric * area) / distance).toFixed(2);
+
+  const ProgressPills = ({ values, tested }) => (
+    <div className="flex flex-wrap gap-2 mt-3">
+      {values.map(value => {
+        const done = tested.has(value);
+        return (
+          <span key={value} className={`px-2.5 py-1 rounded-full text-xs font-bold border ${done ? 'bg-green-500/15 border-green-400/40 text-green-300' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>
+            {done ? '✓ ' : ''}{value}
+          </span>
+        );
+      })}
+    </div>
+  );
 
   return (
-    <div className="flex flex-col h-full p-8 fade-in max-w-7xl mx-auto">
-      <div className="flex justify-between items-end mb-6">
-        <div>
-          <h2 className="text-3xl font-bold flex items-center gap-3 text-cyan-400">
-            <Activity className="text-blue-500" /> Virtual Capacitor Lab
-          </h2>
-          <p className="text-slate-300 mt-2">Investigate the variables that affect a device's ability to store electrical charge (Capacitance).</p>
+    <div className="flex flex-col h-full p-8 fade-in max-w-7xl mx-auto overflow-y-auto">
+      <div className="mb-5">
+        <h2 className="text-3xl font-bold flex items-center gap-3 text-cyan-400">
+          <Activity className="text-blue-500" /> Virtual Capacitor Lab
+        </h2>
+        <p className="text-slate-300 mt-2">Investigate the relationship between capacitance and the three factors in your hypotheses.</p>
+      </div>
+
+      <div className="glass-card p-5 rounded-2xl mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+          <h3 className="font-bold text-lg">Investigation Progress</h3>
+          <span className={`text-sm font-bold ${allExplored ? 'text-green-400' : 'text-cyan-300'}`}>
+            {testedArea.size}/{AREA_TARGETS.length} Area · {testedDistance.size}/{DISTANCE_TARGETS.length} Distance · {testedMaterial.size}/{MATERIAL_TARGETS.length} Material
+          </span>
         </div>
-        <div className="glass px-6 py-3 rounded-2xl border-cyan-500/50">
-          <p className="text-sm text-cyan-200 mb-1 font-mono uppercase">Live Reading</p>
-          <div className="text-4xl font-mono font-bold text-cyan-400">
-            {capacitance} <span className="text-xl">pF</span>
-          </div>
+        <div className="grid md:grid-cols-3 gap-4">
+          <div><p className="text-sm font-semibold text-slate-300">Plate Area</p><ProgressPills values={AREA_TARGETS} tested={testedArea} /></div>
+          <div><p className="text-sm font-semibold text-slate-300">Plate Distance</p><ProgressPills values={DISTANCE_TARGETS} tested={testedDistance} /></div>
+          <div><p className="text-sm font-semibold text-slate-300">Dielectric Material</p><ProgressPills values={MATERIAL_TARGETS.map(x => x[0].toUpperCase()+x.slice(1))} tested={new Set([...testedMaterial].map(x => x[0].toUpperCase()+x.slice(1)))} /></div>
         </div>
       </div>
 
-      <div className="flex-1 grid lg:grid-cols-3 gap-8">
-        {/* Controls */}
-        <div className="glass-card p-6 rounded-3xl space-y-8 flex flex-col justify-center relative z-10">
+      <div className="glass px-6 py-4 rounded-2xl border-cyan-500/50 mb-6 flex items-center justify-between gap-4">
+        <div>
+          <p className="text-sm text-cyan-200 mb-1 font-mono uppercase tracking-wider">Live Reading</p>
+          <p className="text-xs text-slate-400">Current capacitance</p>
+        </div>
+        <div className="text-3xl md:text-4xl font-mono font-bold text-cyan-400">{capacitance} <span className="text-xl">pF</span></div>
+      </div>
+
+      <div className="flex-1 grid lg:grid-cols-3 gap-8 min-h-[420px]">
+        <div className="glass-card p-6 rounded-3xl space-y-7 flex flex-col justify-center relative z-10">
           <div>
-            <label className="flex justify-between font-bold mb-2">
-              <span>Plate Area (A)</span>
-              <span className="text-cyan-400">{area} mm²</span>
-            </label>
-            <input 
-              type="range" min="10" max="100" value={area} 
-              onChange={(e) => { setArea(Number(e.target.value)); handleInteraction('area'); }} 
-              className="w-full" 
-            />
-            <p className="text-xs text-slate-400 mt-2">Controls the size of the conductive plates.</p>
+            <label className="flex justify-between font-bold mb-2"><span>Plate Area (A)</span><span className="text-cyan-400">{area} mm²</span></label>
+            <input type="range" min="0" max="100" step="1" value={area} onChange={(e) => markArea(Number(e.target.value))} className="w-full" />
+            <div className="flex gap-2 mt-2">{AREA_TARGETS.map(v => <button key={v} onClick={() => markArea(v)} className={`text-xs px-2 py-1 rounded-md ${area===v ? 'bg-cyan-500 text-white' : 'bg-slate-800 text-slate-400'}`}>{v}</button>)}</div>
           </div>
 
           <div>
-            <label className="flex justify-between font-bold mb-2">
-              <span>Plate Distance (d)</span>
-              <span className="text-cyan-400">{distance} mm</span>
-            </label>
-            <input 
-              type="range" min="5" max="50" value={distance} 
-              onChange={(e) => { setDistance(Number(e.target.value)); handleInteraction('distance'); }} 
-              className="w-full" 
-            />
-            <p className="text-xs text-slate-400 mt-2">Controls the gap between the plates.</p>
+            <label className="flex justify-between font-bold mb-2"><span>Plate Distance (d)</span><span className="text-cyan-400">{distance} mm</span></label>
+            <input type="range" min="0" max="40" step="1" value={distance} onChange={(e) => markDistance(Number(e.target.value))} className="w-full" />
+            <div className="flex gap-2 mt-2">{DISTANCE_TARGETS.map(v => <button key={v} onClick={() => markDistance(v)} className={`text-xs px-2 py-1 rounded-md ${distance===v ? 'bg-cyan-500 text-white' : 'bg-slate-800 text-slate-400'}`}>{v}</button>)}</div>
           </div>
 
           <div>
             <label className="font-bold mb-2 block">Material Between Plates</label>
             <div className="grid grid-cols-3 gap-2">
-              <button onClick={() => { setDielectric(1); handleInteraction('material'); }} className={`py-2 rounded-lg text-sm transition-all ${dielectric === 1 ? 'bg-cyan-500 text-white font-bold' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>Air</button>
-              <button onClick={() => { setDielectric(3.4); handleInteraction('material'); }} className={`py-2 rounded-lg text-sm transition-all ${dielectric === 3.4 ? 'bg-cyan-500 text-white font-bold' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>Plastic</button>
-              <button onClick={() => { setDielectric(10); handleInteraction('material'); }} className={`py-2 rounded-lg text-sm transition-all ${dielectric === 10 ? 'bg-cyan-500 text-white font-bold' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>Glass</button>
+              <button onClick={() => markMaterial('air',1)} className={`py-2 rounded-lg text-sm transition-all ${dielectric === 1 ? 'bg-cyan-500 text-white font-bold' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>Air</button>
+              <button onClick={() => markMaterial('plastic',3.4)} className={`py-2 rounded-lg text-sm transition-all ${dielectric === 3.4 ? 'bg-cyan-500 text-white font-bold' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>Plastic</button>
+              <button onClick={() => markMaterial('glass',10)} className={`py-2 rounded-lg text-sm transition-all ${dielectric === 10 ? 'bg-cyan-500 text-white font-bold' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>Glass</button>
             </div>
-            <p className="text-xs text-slate-400 mt-2">Changes the insulating substance in the gap.</p>
+            
           </div>
         </div>
 
-        {/* Visualizer */}
-        <div className="lg:col-span-2 glass p-8 rounded-3xl flex flex-col items-center justify-center relative overflow-hidden bg-slate-900/80 shadow-inner">
+        <div className="lg:col-span-2 glass p-8 rounded-3xl flex flex-col items-center justify-center relative overflow-hidden bg-slate-900/80 shadow-inner min-h-[420px]">
           <div className="absolute inset-0 opacity-20 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-700 via-transparent to-transparent pointer-events-none"></div>
-          
           <div className="relative flex flex-col items-center justify-center h-64 w-full perspective-[1000px]">
-            {/* Top Plate (+) */}
-            <div 
-              className="absolute bg-blue-400/80 border-2 border-cyan-300 shadow-[0_0_15px_rgba(56,189,248,0.5)] flex items-center justify-center overflow-hidden transition-all duration-300 ease-out"
-              style={{
-                width: `${area * 3}px`,
-                height: '20px',
-                transform: `translateY(-${distance * 1.5}px) rotateX(60deg) rotateZ(-45deg)`,
-                borderRadius: '4px'
-              }}
-            >
-               <div className="absolute inset-0 flex flex-wrap justify-center items-center gap-1 opacity-50 p-1">
-                 {[...Array(Math.floor(area/5))].map((_, i) => <span key={i} className="text-[10px] font-bold text-white">+</span>)}
-               </div>
+            <div className="absolute bg-blue-400/80 border-2 border-cyan-300 shadow-[0_0_15px_rgba(56,189,248,0.5)] flex items-center justify-center overflow-hidden transition-all duration-300 ease-out" style={{width:`${area*3}px`,height:'20px',transform:`translateY(-${distance*1.5}px) rotateX(60deg) rotateZ(-45deg)`,borderRadius:'4px'}}>
+              <div className="absolute inset-0 flex flex-wrap justify-center items-center gap-1 opacity-50 p-1">{[...Array(Math.floor(area/5))].map((_,i)=><span key={i} className="text-[10px] font-bold text-white">+</span>)}</div>
             </div>
-
-            {/* Dielectric representation */}
-            {dielectric > 1 && (
-              <div 
-                className="absolute transition-all duration-300 ease-out pointer-events-none"
-                style={{
-                  width: `${area * 3}px`,
-                  height: `${distance * 3}px`,
-                  background: dielectric === 3.4 ? 'rgba(168, 85, 247, 0.2)' : 'rgba(56, 189, 248, 0.2)', // Purple for plastic, Blue for glass
-                  transform: `translateY(0) rotateX(60deg) rotateZ(-45deg)`,
-                  borderLeft: '1px solid rgba(255,255,255,0.1)',
-                  borderRight: '1px solid rgba(255,255,255,0.1)',
-                }}
-              ></div>
-            )}
-
-            {/* Electric Field Lines */}
-            <svg className="absolute w-full h-full pointer-events-none" style={{ transform: 'rotateX(60deg) rotateZ(-45deg)' }}>
-                {[...Array(Math.floor(area/10))].map((_, i) => (
-                  <line 
-                    key={i}
-                    x1="50%" y1={`calc(50% - ${distance * 1.5}px)`}
-                    x2="50%" y2={`calc(50% + ${distance * 1.5}px)`}
-                    stroke="rgba(56, 189, 248, 0.4)" 
-                    strokeWidth="1"
-                    strokeDasharray="4 4"
-                    className="animate-field"
-                    style={{ transform: `translateX(${(i - Math.floor(area/20)) * 10}px)` }}
-                  />
-                ))}
+            {dielectric > 1 && <div className="absolute transition-all duration-300 ease-out pointer-events-none" style={{width:`${area*3}px`,height:`${distance*3}px`,background:dielectric===3.4?'rgba(168,85,247,0.2)':'rgba(56,189,248,0.2)',transform:'translateY(0) rotateX(60deg) rotateZ(-45deg)',borderLeft:'1px solid rgba(255,255,255,0.1)',borderRight:'1px solid rgba(255,255,255,0.1)'}}></div>}
+            <svg className="absolute w-full h-full pointer-events-none" style={{transform:'rotateX(60deg) rotateZ(-45deg)'}}>
+              {[...Array(Math.floor(area/10))].map((_,i)=><line key={i} x1="50%" y1={`calc(50% - ${distance*1.5}px)`} x2="50%" y2={`calc(50% + ${distance*1.5}px)`} stroke="rgba(56,189,248,0.4)" strokeWidth="1" strokeDasharray="4 4" className="animate-field" style={{transform:`translateX(${(i-Math.floor(area/20))*10}px)`}} />)}
             </svg>
-
-            {/* Bottom Plate (-) */}
-            <div 
-              className="absolute bg-slate-400/80 border-2 border-slate-300 shadow-[0_0_15px_rgba(148,163,184,0.5)] flex items-center justify-center overflow-hidden transition-all duration-300 ease-out"
-              style={{
-                width: `${area * 3}px`,
-                height: '20px',
-                transform: `translateY(${distance * 1.5}px) rotateX(60deg) rotateZ(-45deg)`,
-                borderRadius: '4px'
-              }}
-            >
-               <div className="absolute inset-0 flex flex-wrap justify-center items-center gap-1 opacity-50 p-1">
-                 {[...Array(Math.floor(area/5))].map((_, i) => <span key={i} className="text-[10px] font-bold text-white">-</span>)}
-               </div>
+            <div className="absolute bg-slate-400/80 border-2 border-slate-300 shadow-[0_0_15px_rgba(148,163,184,0.5)] flex items-center justify-center overflow-hidden transition-all duration-300 ease-out" style={{width:`${area*3}px`,height:'20px',transform:`translateY(${distance*1.5}px) rotateX(60deg) rotateZ(-45deg)`,borderRadius:'4px'}}>
+              <div className="absolute inset-0 flex flex-wrap justify-center items-center gap-1 opacity-50 p-1">{[...Array(Math.floor(area/5))].map((_,i)=><span key={i} className="text-[10px] font-bold text-white">-</span>)}</div>
             </div>
           </div>
-          
-          {hasExploredAll && (
-             <div className="absolute bottom-6 right-6 fade-in z-50">
-               <button onClick={onNext} className="glass-button px-6 py-3 rounded-full font-bold flex items-center gap-2 shadow-[0_0_20px_rgba(56,189,248,0.5)]">
-                 Analyze Data <ChevronRight size={18}/>
-               </button>
-             </div>
-          )}
+
+          <div className="mt-5 text-center relative z-10">
+            {allExplored ? (
+              <div className="fade-in bg-green-900/30 border border-green-500/30 p-5 rounded-2xl">
+                <p className="text-green-300 font-bold mb-3">✓ Investigation Complete!</p>
+                <p className="text-slate-300 text-sm mb-4">You have investigated all required values for the three factors. Use your observations to complete the Student Worksheet.</p>
+                <button onClick={onNext} className="glass-button px-7 py-3 rounded-full font-bold flex items-center gap-2 mx-auto">Continue to Pattern Recognition <ChevronRight size={18}/></button>
+              </div>
+            ) : (
+              <div className="glass px-5 py-3 rounded-xl">
+                <p className="text-cyan-300 font-semibold">Complete all three investigations before continuing.</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-      <Capa 
-        message={bonusAwarded ? "Maximum capacitance achieved! You've gathered excellent evidence." : hasExploredAll ? "You've successfully tested Area, Distance, and Material. Ready to analyze the data?" : "To collect valid evidence, make sure you test changing the Area, Distance, AND the Material."} 
-        mood={bonusAwarded ? 'happy' : 'normal'}
-      />
+      <Capa message={allExplored ? "Excellent! You have collected the evidence needed to test your hypotheses. Use your Student Worksheet evidence to identify the physical relationships in the next phase." : "Change each variable and test every required value. You cannot continue until all three investigations are complete."} mood={allExplored ? 'happy' : 'normal'} />
     </div>
   );
 };
@@ -560,7 +668,7 @@ const Step5Analyze = ({ onNext, setGlobalXp }) => {
   return (
     <div className="flex flex-col h-full p-8 fade-in max-w-4xl mx-auto justify-center">
       <h2 className="text-4xl font-bold mb-2 text-center text-cyan-400">Pattern Recognition</h2>
-      <p className="text-slate-300 mb-8 text-center text-lg">Based on your lab evidence, verify the physical relationships.</p>
+      <p className="text-slate-300 mb-8 text-center text-lg">Based on your lab evidence, identify and verify the physical relationships.</p>
 
       <div className="space-y-6 mb-8">
         <div className="glass-card p-6 rounded-3xl text-lg flex flex-col md:flex-row items-center gap-4 justify-between">
@@ -611,13 +719,14 @@ const Step5Analyze = ({ onNext, setGlobalXp }) => {
         message={
           hasVerified && isCorrect ? "Perfect! Direct proportionality for Area, inverse for Distance, and the material matters too." : 
           hasVerified && !isCorrect ? "Not quite perfect. The real patterns are: Area increases Capacitance, Distance decreases Capacitance, and Material affects Capacitance." : 
-          "Use the evidence you gathered to select the correct relationships, then verify."
+          "Use the evidence you gathered in the Virtual Capacitor Lab and your Student Worksheet to identify the relationships, then verify."
         }
         mood={hasVerified && isCorrect ? 'happy' : 'normal'}
       />
     </div>
   );
 };
+
 
 const Step6Discover = ({ onNext }) => {
   const [hovered, setHovered] = useState(null);
@@ -626,9 +735,8 @@ const Step6Discover = ({ onNext }) => {
     <div className="flex flex-col min-h-full py-8 px-4 sm:px-8 fade-in max-w-6xl mx-auto items-center justify-center">
       <h2 className="text-3xl font-bold mb-4 text-cyan-400">The Capacitance Equation</h2>
       <p className="text-slate-300 mb-8 text-center text-lg max-w-3xl">
-        You discovered that Area (A), Distance (d), and the Material all affect capacitance. 
-        Scientists represent the material's property as <strong className="text-blue-400">Permittivity (ε)</strong>. 
-        Together, they form the fundamental equation governing all capacitors.
+        Your investigation showed that capacitance depends on the plate area, plate separation, and dielectric material.
+        These relationships can be represented mathematically by the capacitance equation.
       </p>
       
       <div className="w-full glass-card py-12 px-4 sm:px-6 rounded-[3rem] mb-16 relative group border-cyan-500/50 hover:border-cyan-400 transition-all flex justify-center max-w-full overflow-x-auto no-scrollbar">
@@ -671,10 +779,10 @@ const Step6Discover = ({ onNext }) => {
       </div>
 
       <button onClick={onNext} className="glass-button px-8 py-4 rounded-full text-lg font-bold flex items-center gap-2 mt-4 relative z-30">
-        See Inside a Touchscreen <Smartphone size={20}/>
+        Connect to Technology <Smartphone size={20}/>
       </button>
 
-      <Capa message="Hover over the variables! You just derived the equation based entirely on your own evidence." mood="happy"/>
+      <Capa message="Connect the variables in the equation to the patterns you observed in the Virtual Capacitor Lab." mood="happy"/>
     </div>
   );
 };
@@ -687,7 +795,7 @@ const Step7Tech = ({ onNext }) => {
       <h2 className="text-3xl font-bold mb-2 flex items-center gap-3 text-cyan-400">
         <Cpu className="text-blue-500" /> Technology Explained
       </h2>
-      <p className="text-slate-300 mb-8">How does a smartphone use Capacitance to detect your touch?</p>
+      <p className="text-slate-300 mb-8">Now, let's return to the touchscreen and connect your findings to the technology.</p>
 
       <div className="flex-1 grid lg:grid-cols-2 gap-12 items-center">
         {/* Exploded View Animation */}
@@ -997,23 +1105,16 @@ export default function App() {
     if (step > 1) setStep(step - 1);
   };
 
-  // Prevent default scroll behavior
-  useEffect(() => {
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = 'auto'; };
-  }, []);
-
   return (
     <>
       <style>{globalStyles}</style>
-      <div className="relative w-screen h-screen flex flex-col text-slate-50 overflow-hidden font-sans select-none">
+      <div className="relative min-h-[100dvh] w-full flex flex-col text-slate-50 overflow-hidden font-sans select-none">
         <Background />
 
-        {/* Global Header / HUD */}
         {step > 1 && (
-          <header className="h-20 w-full flex items-center justify-between px-8 relative z-40 border-b border-white/5 bg-slate-900/50 backdrop-blur-md">
+          <header className="h-16 sm:h-20 w-full flex items-center justify-between px-8 relative z-40 border-b border-white/5 bg-slate-900/50 backdrop-blur-md">
             <div className="flex items-center gap-4">
-              <button onClick={prevStep} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+              <button onClick={prevStep} className="p-2 hover:bg-white/10 rounded-full transition-colors" title="Previous phase">
                 <ChevronLeft size={24} />
               </button>
               <div className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300 flex items-center gap-2">
@@ -1022,35 +1123,27 @@ export default function App() {
               </div>
             </div>
 
-            {/* Progress Indicator */}
-        <div className="flex-1 max-w-md mx-8">
-           <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden flex">
-             <div 
-               className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 transition-all duration-700 ease-out"
-               style={{ width: `${(step / 9) * 100}%` }}
-             ></div>
-           </div>
-           <div className="flex justify-between mt-2 text-[10px] uppercase font-bold text-slate-500 tracking-wider hidden sm:flex">
-             <span>Observe</span>
-             <span>Investigate</span>
-             <span>Apply</span>
-           </div>
-        </div>
+            <div className="flex-1 max-w-md mx-8">
+              <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden flex">
+                <div className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 transition-all duration-700 ease-out" style={{ width: `${(step / 9) * 100}%` }}></div>
+              </div>
+              <div className="flex justify-between mt-2 text-[10px] uppercase font-bold text-slate-500 tracking-wider hidden sm:flex">
+                <span>Observe</span><span>Investigate</span><span>Apply</span>
+              </div>
+            </div>
 
-        {/* XP Counter */}
-        <div className="glass px-4 py-1.5 rounded-full flex items-center gap-2 border-cyan-500/30 shrink-0">
-           <Sparkles size={16} className="text-cyan-400" />
-           <span className="font-mono font-bold text-cyan-300">{xp}</span>
-           <span className="text-xs text-slate-400 hidden sm:inline">XP</span>
-        </div>
-      </header>
-    )}
+            <div className="glass px-4 py-1.5 rounded-full flex items-center gap-2 border-cyan-500/30 shrink-0">
+              <Sparkles size={16} className="text-cyan-400" />
+              <span className="font-mono font-bold text-cyan-300">{xp}</span>
+              <span className="text-xs text-slate-400 hidden sm:inline">XP</span>
+            </div>
+          </header>
+        )}
 
-    {/* Main Content Area */}
-    <main className="flex-1 relative overflow-y-auto overflow-x-hidden scroll-smooth pb-40 md:pb-48">
-      {step === 1 && <Step1Landing onNext={nextStep} />}
-      {step === 2 && <Step2Observe onNext={nextStep} setGlobalXp={setXp} />}
-          {step === 3 && <Step3Predict onNext={nextStep} setGlobalXp={setXp} />}
+        <main className="flex-1 relative overflow-y-auto overflow-x-hidden scroll-smooth pb-24 md:pb-32">
+          {step === 1 && <Step1Landing onNext={nextStep} />}
+          {step === 2 && <Step2Observe onNext={nextStep} setGlobalXp={setXp} />}
+          {step === 3 && <Step3Prepare onNext={nextStep} />}
           {step === 4 && <Step4Investigate onNext={nextStep} setGlobalXp={setXp} />}
           {step === 5 && <Step5Analyze onNext={nextStep} setGlobalXp={setXp} />}
           {step === 6 && <Step6Discover onNext={nextStep} />}
